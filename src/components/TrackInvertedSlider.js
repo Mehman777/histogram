@@ -3,6 +3,7 @@ import { styled } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import MuiSlider from '@mui/material/Slider';
+import {useEffect} from "react";
 
 const Slider = styled(MuiSlider)({
     '& .MuiSlider-markLabel': {
@@ -11,37 +12,35 @@ const Slider = styled(MuiSlider)({
 });
 
 const marks = [
-    {
-        value: 0,
-        label: '0°C',
-    },
-    {
-        value: 20,
-        label: '20°C',
-    },
-    {
-        value: 37,
-        label: '37°C',
-    },
-    {
-        value: 40,
-        label: '40°C',
-    },
-    {
-        value: 100,
-        label: '100°C',
-    },
+    { value: 0,label: ''},
+    { value: 5.8,label: ''},
+    { value: 15,label: ''},
+    { value: 36.2,label: ''},
+    { value: 1556,label: ''},
+    { value: 2556,label: ''}
+
 ];
 
 function valuetext(value) {
     return `${value}°C`;
 }
 
+
 export default function TrackInvertedSlider(props) {
+    const [value, setValue] = React.useState();
+
+    useEffect(() => {
+        props.sendToParent(value);
+    }, [value]);
+    const handleChange = (event, newValue) => {
+        setValue(newValue);
+
+
+    };
     return (
         <Box sx={{ width: 600 }}>
 
-            <Slider
+            {/*<Slider
                 track="inverted"
                 aria-labelledby="track-inverted-range-slider"
                 getAriaValueText={valuetext}
@@ -49,6 +48,18 @@ export default function TrackInvertedSlider(props) {
                 marks={marks}
                 aria-orientation={"horizontal"}
                 //style={{transform: "rotate(90deg)"}}
+            />*/}
+            <Slider
+                aria-label="Temperature"
+                defaultValue={1556}
+                getAriaValueText={null}
+                valueLabelDisplay="auto"
+                step={null}
+                marks={marks}
+                min={0}
+                max={5000}
+                value={props.selected}
+                onChange={handleChange}
             />
         </Box>
     );

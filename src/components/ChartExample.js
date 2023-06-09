@@ -1,14 +1,15 @@
 'use strict';
 
 import React, { Component } from 'react';
-import { createRoot } from 'react-dom/client';
 import { AgChartsReact } from 'ag-charts-react';
-import {getData} from "../data";
+import Service from "../services/service";
+import * as events from "events";
 
 export default class ChartExample extends Component {
+
+
     constructor(props) {
         super(props);
-
         this.state = {
             searchParams:{
                 description:[]
@@ -20,21 +21,23 @@ export default class ChartExample extends Component {
                 subtitle: {
                     text: '(click a column for details)',
                 },
-                data: [
-                    { month: '2.7-4.5', units: 1552, brands: { BMW: 10, Toyota: 15 } },
-                    { month: '4.5-6', units: 26, brands: { Ford: 17, BMW: 10 } },
-                    { month: '6-15.2', units: 422, brands: { Nissan: 20, Toyota: 22 } },
-                    { month: '15.2-25-5', units: 582, brands: { BMW: 10, Toyota: 15 } },
-                    { month: '25.5-48.9', units: 1, brands: { Ford: 17, BMW: 10 } },
-                    { month: '48.9-59.9', units: 0, brands: { Nissan: 20, Toyota: 22 } },
-                    { month: '59.9-78.2', units: 188, brands: { BMW: 10, Toyota: 15 } },
-                    { month: '78.2-80', units: 14, brands: { Ford: 17, BMW: 10 } },
-                ],
+                onSeriesClick: ()=>{
+                    alert("salam2")
+                },
+                data: [],
                 series: [
                     {
                         type: 'column',
-                        xKey: 'month',
-                        yKey: 'units',
+                        xKey: 'minValue',
+                        yKey: 'count',
+                        tooltip: {
+                            enabled: true,
+                            renderer: (params) => {
+                                const { datum } = params;
+                                return `<div>${datum.minValue}-${datum.maxValue} : ${datum.count}</div>`;
+                            },
+                        },
+                        fills: this.fillColors,
                         listeners: {
                             nodeClick: (event) => {
                                 var datum = event.datum;
@@ -48,9 +51,20 @@ export default class ChartExample extends Component {
                                 // );
 
                                 var desc=this.state.searchParams.description;
-                                desc.push(datum[event.yKey])
-                                alert(desc)
+                                var a={
+                                        id:datum.id,
+                                        minValue:datum.minValue,
+                                        maxValue:datum.maxValue
+                                }
+                                desc.push(a);
+                                this.setState({desc})
+                                //alert(JSON.stringify(desc))
+                                this.props.onChange(desc);
+                                //alert(this.props.selected)
                             },
+                            nodeSelect:()=>{
+                                alert("defsel")
+                            }
                         },
                     },
                 ],
@@ -58,25 +72,72 @@ export default class ChartExample extends Component {
                     {
                         type: 'category',
                         position: 'bottom',
+                        label:{
+                            formatter: () => ''
+                        },
+                        tick: {
+                            formatter: () => '', // set the tick label to an empty string to hide the discrete values
+                        },
                     },
                     {
                         type: 'number',
                         position: 'left',
+                        label: {
+                            fontFamily: "Interstate-Regular",
+                            fontSize: 14,
+                            color: 'blue',
+
+                        },
+                        tick: {
+                            label: "", // set the tick label to an empty string to hide the discrete values
+                        },
                     },
                 ],
+                label: {
+                    avoidCollisions: true
+                },
                 legend: {
                     enabled: false,
                 },
             },
         };
     }
+    fillColors =()=> {this.state.options.data.map((datum) => {
+        if (datum.count > 200) {
+            return 'green'; // Fill columns with value > 20 as green
+        } else {
+            return 'blue'; // Fill other columns as blue
+        }
+    })};
+    retrieveHistogramData=()=> {
+        var payload={};
+        payload["selected"]=223;
+        var data=this.state.options;
+        Service.getHistogramData(payload)
+            .then((response) => {
+                data.data=response.data;
+                this.setState({
+                    data
+                });
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+    }
 
-    componentDidMount() {}
-
+    componentDidMount() {
+        this.retrieveHistogramData();
+    }
+    handleColumnSelection(){
+        alert("handle column selection");
+    }
     render() {
         return (
             <div className="wrapper">
-                <AgChartsReact options={this.state.options} />
+                <AgChartsReact
+                    options={this.state.options}
+                    handleColumnSelection={this.handleColumnSelection}
+                />
             </div>
         );
     }
@@ -88,5 +149,3 @@ function listUnitsSoldByBrand(brands) {
     }
     return result;
 }
-const root = createRoot(document.getElementById('root'));
-root.render(<ChartExample />);
